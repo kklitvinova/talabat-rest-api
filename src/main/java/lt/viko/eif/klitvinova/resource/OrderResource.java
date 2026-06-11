@@ -19,6 +19,8 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 /**
  * JAX-RS REST resource for order operations.
@@ -28,12 +30,14 @@ import java.util.stream.Collectors;
  * @version 1.0
  */
 @Tag(name = "Orders", description = "Talabat food delivery order management API")
+@Component
 @Path("/orders")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public class OrderResource {
 
-    private final OrderService service = new OrderService();
+    @Autowired
+    private OrderService service;
 
     @Context
     private UriInfo uriInfo;

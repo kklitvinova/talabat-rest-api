@@ -1,5 +1,6 @@
 package lt.viko.eif.klitvinova.service;
 
+import org.springframework.stereotype.Component;
 import lt.viko.eif.klitvinova.model.CsvDataLoader;
 import lt.viko.eif.klitvinova.model.Order;
 
@@ -15,6 +16,7 @@ import java.util.stream.Collectors;
  * @author Klitvinova
  * @version 1.0
  */
+@Component
 public class OrderService {
 
     private final CsvDataLoader loader = new CsvDataLoader();
