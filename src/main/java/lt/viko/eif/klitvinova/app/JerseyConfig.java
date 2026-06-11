@@ -1,6 +1,7 @@
 package lt.viko.eif.klitvinova.app;
 
 import lt.viko.eif.klitvinova.resource.OrderResource;
+import lt.viko.eif.klitvinova.security.AuthController;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.springframework.stereotype.Component;
 
@@ -19,6 +20,7 @@ public class JerseyConfig extends ResourceConfig {
      */
     public JerseyConfig() {
         register(OrderResource.class);
+        register(AuthController.class);
         property("jersey.config.server.wadl.disableWadl", false);
     }
 }
