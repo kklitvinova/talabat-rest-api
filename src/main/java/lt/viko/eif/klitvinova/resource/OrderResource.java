@@ -1,12 +1,17 @@
 package lt.viko.eif.klitvinova.resource;
 
 import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import lt.viko.eif.klitvinova.model.CsvDataLoader;
+import jakarta.ws.rs.core.UriBuilder;
+import jakarta.ws.rs.core.UriInfo;
 import lt.viko.eif.klitvinova.model.Order;
+import lt.viko.eif.klitvinova.model.OrderResponse;
+import lt.viko.eif.klitvinova.service.OrderService;
 
 import java.io.IOException;
+import java.net.URI;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -22,20 +27,33 @@ import java.util.stream.Collectors;
 @Consumes(MediaType.APPLICATION_JSON)
 public class OrderResource {
 
-    private final CsvDataLoader loader = new CsvDataLoader();
+    private final OrderService service = new OrderService();
+
+    @Context
+    private UriInfo uriInfo;
+
+    /**
+     * Returns base URL from request context.
+     *
+     * @return base URL string
+     */
+    private String getBaseUrl() {
+        return uriInfo.getBaseUri().toString().replaceAll("/$", "");
+    }
 
     /**
      * GET /api/orders
-     * Returns all orders.
+     * Returns all orders with HATEOAS links.
      *
      * @return list of all orders
      */
     @GET
     public Response getAllOrders() {
         try {
-            List<Order> orders = loader.loadOrders();
-            System.out.println("GET /api/orders -> " + orders.size());
-            return Response.ok(orders).build();
+            List<OrderResponse> result = service.getAllOrders().stream()
+                    .map(o -> new OrderResponse(o, getBaseUrl()))
+                    .collect(Collectors.toList());
+            return Response.ok(result).build();
         } catch (IOException e) {
             return Response.serverError().entity(e.getMessage()).build();
         }
@@ -43,7 +61,7 @@ public class OrderResource {
 
     /**
      * GET /api/orders/{id}
-     * Returns a single order by ID.
+     * Returns a single order by ID with HATEOAS links.
      *
      * @param id order ID
      * @return order or 404
@@ -52,16 +70,12 @@ public class OrderResource {
     @Path("/{id}")
     public Response getOrderById(@PathParam("id") int id) {
         try {
-            Order order = loader.loadOrders(100000).stream()
-                .filter(o -> o.getOrderId() == id)
-                .findFirst()
-                .orElse(null);
-
+            Order order = service.getOrderById(id);
             if (order == null) {
                 return Response.status(Response.Status.NOT_FOUND)
-                    .entity("Order not found: " + id).build();
+                        .entity("Order not found: " + id).build();
             }
-            return Response.ok(order).build();
+            return Response.ok(new OrderResponse(order, getBaseUrl())).build();
         } catch (IOException e) {
             return Response.serverError().entity(e.getMessage()).build();
         }
@@ -69,7 +83,7 @@ public class OrderResource {
 
     /**
      * GET /api/orders/city/{city}
-     * Returns orders filtered by city.
+     * Returns orders filtered by city with HATEOAS links.
      *
      * @param city city name
      * @return list of orders from that city
@@ -78,9 +92,9 @@ public class OrderResource {
     @Path("/city/{city}")
     public Response getOrdersByCity(@PathParam("city") String city) {
         try {
-            List<Order> result = loader.loadOrders(200).stream()
-                .filter(o -> city.equalsIgnoreCase(o.getCity()))
-                .collect(Collectors.toList());
+            List<OrderResponse> result = service.getByCity(city).stream()
+                    .map(o -> new OrderResponse(o, getBaseUrl()))
+                    .collect(Collectors.toList());
             return Response.ok(result).build();
         } catch (IOException e) {
             return Response.serverError().entity(e.getMessage()).build();
@@ -89,7 +103,7 @@ public class OrderResource {
 
     /**
      * GET /api/orders/status/{delivered}
-     * Returns orders filtered by delivery status.
+     * Returns orders filtered by delivery status with HATEOAS links.
      *
      * @param delivered true or false
      * @return filtered list of orders
@@ -98,9 +112,9 @@ public class OrderResource {
     @Path("/status/{delivered}")
     public Response getOrdersByStatus(@PathParam("delivered") boolean delivered) {
         try {
-            List<Order> result = loader.loadOrders(200).stream()
-                .filter(o -> delivered == o.isDelivered())
-                .collect(Collectors.toList());
+            List<OrderResponse> result = service.getByStatus(delivered).stream()
+                    .map(o -> new OrderResponse(o, getBaseUrl()))
+                    .collect(Collectors.toList());
             return Response.ok(result).build();
         } catch (IOException e) {
             return Response.serverError().entity(e.getMessage()).build();
@@ -109,7 +123,7 @@ public class OrderResource {
 
     /**
      * GET /api/orders/payment/{method}
-     * Returns orders filtered by payment method.
+     * Returns orders filtered by payment method with HATEOAS links.
      *
      * @param method payment method
      * @return filtered list of orders
@@ -118,12 +132,67 @@ public class OrderResource {
     @Path("/payment/{method}")
     public Response getOrdersByPayment(@PathParam("method") String method) {
         try {
-            List<Order> result = loader.loadOrders(200).stream()
-                .filter(o -> method.equalsIgnoreCase(o.getPaymentMethod()))
-                .collect(Collectors.toList());
+            List<OrderResponse> result = service.getByPayment(method).stream()
+                    .map(o -> new OrderResponse(o, getBaseUrl()))
+                    .collect(Collectors.toList());
             return Response.ok(result).build();
         } catch (IOException e) {
             return Response.serverError().entity(e.getMessage()).build();
         }
+    }
+
+    /**
+     * POST /api/orders
+     * Creates a new order.
+     *
+     * @param order order to create
+     * @return created order with 201 status
+     */
+    @POST
+    public Response createOrder(Order order) {
+        Order created = service.createOrder(order);
+        URI location = UriBuilder.fromResource(OrderResource.class)
+                .path(String.valueOf(created.getOrderId()))
+                .build();
+        return Response.created(location)
+                .entity(new OrderResponse(created, getBaseUrl()))
+                .build();
+    }
+
+    /**
+     * PUT /api/orders/{id}
+     * Updates an existing order.
+     *
+     * @param id order ID
+     * @param order updated order data
+     * @return updated order or 404
+     */
+    @PUT
+    @Path("/{id}")
+    public Response updateOrder(@PathParam("id") int id, Order order) {
+        Order updated = service.updateOrder(id, order);
+        if (updated == null) {
+            return Response.status(Response.Status.NOT_FOUND)
+                    .entity("Order not found: " + id).build();
+        }
+        return Response.ok(new OrderResponse(updated, getBaseUrl())).build();
+    }
+
+    /**
+     * DELETE /api/orders/{id}
+     * Deletes an order by ID.
+     *
+     * @param id order ID
+     * @return 204 or 404
+     */
+    @DELETE
+    @Path("/{id}")
+    public Response deleteOrder(@PathParam("id") int id) {
+        boolean deleted = service.deleteOrder(id);
+        if (!deleted) {
+            return Response.status(Response.Status.NOT_FOUND)
+                    .entity("Order not found: " + id).build();
+        }
+        return Response.noContent().build();
     }
 }
