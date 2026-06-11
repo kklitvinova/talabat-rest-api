@@ -3,13 +3,12 @@ package lt.viko.eif.klitvinova.resource;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.UriBuilder;
+import lt.viko.eif.klitvinova.model.CsvDataLoader;
 import lt.viko.eif.klitvinova.model.Order;
-import lt.viko.eif.klitvinova.service.OrderService;
 
 import java.io.IOException;
-import java.net.URI;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * JAX-RS REST resource for order operations.
@@ -23,7 +22,7 @@ import java.util.List;
 @Consumes(MediaType.APPLICATION_JSON)
 public class OrderResource {
 
-    private final OrderService service = new OrderService();
+    private final CsvDataLoader loader = new CsvDataLoader();
 
     /**
      * GET /api/orders
@@ -34,7 +33,8 @@ public class OrderResource {
     @GET
     public Response getAllOrders() {
         try {
-            List<Order> orders = service.getAllOrders();
+            List<Order> orders = loader.loadOrders();
+            System.out.println("GET /api/orders -> " + orders.size());
             return Response.ok(orders).build();
         } catch (IOException e) {
             return Response.serverError().entity(e.getMessage()).build();
@@ -52,10 +52,14 @@ public class OrderResource {
     @Path("/{id}")
     public Response getOrderById(@PathParam("id") int id) {
         try {
-            Order order = service.getOrderById(id);
+            Order order = loader.loadOrders(100000).stream()
+                .filter(o -> o.getOrderId() == id)
+                .findFirst()
+                .orElse(null);
+
             if (order == null) {
                 return Response.status(Response.Status.NOT_FOUND)
-                        .entity("Order not found: " + id).build();
+                    .entity("Order not found: " + id).build();
             }
             return Response.ok(order).build();
         } catch (IOException e) {
@@ -74,7 +78,10 @@ public class OrderResource {
     @Path("/city/{city}")
     public Response getOrdersByCity(@PathParam("city") String city) {
         try {
-            return Response.ok(service.getByCity(city)).build();
+            List<Order> result = loader.loadOrders(200).stream()
+                .filter(o -> city.equalsIgnoreCase(o.getCity()))
+                .collect(Collectors.toList());
+            return Response.ok(result).build();
         } catch (IOException e) {
             return Response.serverError().entity(e.getMessage()).build();
         }
@@ -91,7 +98,10 @@ public class OrderResource {
     @Path("/status/{delivered}")
     public Response getOrdersByStatus(@PathParam("delivered") boolean delivered) {
         try {
-            return Response.ok(service.getByStatus(delivered)).build();
+            List<Order> result = loader.loadOrders(200).stream()
+                .filter(o -> delivered == o.isDelivered())
+                .collect(Collectors.toList());
+            return Response.ok(result).build();
         } catch (IOException e) {
             return Response.serverError().entity(e.getMessage()).build();
         }
@@ -108,62 +118,12 @@ public class OrderResource {
     @Path("/payment/{method}")
     public Response getOrdersByPayment(@PathParam("method") String method) {
         try {
-            return Response.ok(service.getByPayment(method)).build();
+            List<Order> result = loader.loadOrders(200).stream()
+                .filter(o -> method.equalsIgnoreCase(o.getPaymentMethod()))
+                .collect(Collectors.toList());
+            return Response.ok(result).build();
         } catch (IOException e) {
             return Response.serverError().entity(e.getMessage()).build();
         }
-    }
-
-    /**
-     * POST /api/orders
-     * Creates a new order.
-     *
-     * @param order order to create
-     * @return created order with 201 status
-     */
-    @POST
-    public Response createOrder(Order order) {
-        Order created = service.createOrder(order);
-        URI location = UriBuilder.fromResource(OrderResource.class)
-                .path(String.valueOf(created.getOrderId()))
-                .build();
-        return Response.created(location).entity(created).build();
-    }
-
-    /**
-     * PUT /api/orders/{id}
-     * Updates an existing order.
-     *
-     * @param id order ID
-     * @param order updated order data
-     * @return updated order or 404
-     */
-    @PUT
-    @Path("/{id}")
-    public Response updateOrder(@PathParam("id") int id, Order order) {
-        Order updated = service.updateOrder(id, order);
-        if (updated == null) {
-            return Response.status(Response.Status.NOT_FOUND)
-                    .entity("Order not found: " + id).build();
-        }
-        return Response.ok(updated).build();
-    }
-
-    /**
-     * DELETE /api/orders/{id}
-     * Deletes an order by ID.
-     *
-     * @param id order ID
-     * @return 204 or 404
-     */
-    @DELETE
-    @Path("/{id}")
-    public Response deleteOrder(@PathParam("id") int id) {
-        boolean deleted = service.deleteOrder(id);
-        if (!deleted) {
-            return Response.status(Response.Status.NOT_FOUND)
-                    .entity("Order not found: " + id).build();
-        }
-        return Response.noContent().build();
     }
 }
