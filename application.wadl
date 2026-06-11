@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<application xmlns="http://wadl.dev.java.net/2009/02"
+             xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+    <resources base="http://localhost:8080/">
+        <resource path="api/orders">
+            <method name="GET" id="getAllOrders">
+                <doc>Returns all orders from the Talabat dataset</doc>
+                <response status="200">
+                    <representation mediaType="application/json"/>
+                </response>
+            </method>
+            <resource path="{id}">
+                <param name="id" style="template" type="xsd:integer" required="true"/>
+                <method name="GET" id="getOrderById">
+                    <doc>Returns a single order by ID</doc>
+                    <response status="200">
+                        <representation mediaType="application/json"/>
+                    </response>
+                    <response status="404">
+                        <representation mediaType="text/plain"/>
+                    </response>
+                </method>
+            </resource>
+            <resource path="city/{city}">
+                <param name="city" style="template" type="xsd:string" required="true"/>
+                <method name="GET" id="getOrdersByCity">
+                    <doc>Returns orders filtered by city name</doc>
+                    <response status="200">
+                        <representation mediaType="application/json"/>
+                    </response>
+                </method>
+            </resource>
+            <resource path="status/{delivered}">
+                <param name="delivered" style="template" type="xsd:boolean" required="true"/>
+                <method name="GET" id="getOrdersByStatus">
+                    <doc>Returns orders filtered by delivery status</doc>
+                    <response status="200">
+                        <representation mediaType="application/json"/>
+                    </response>
+                </method>
+            </resource>
+            <resource path="payment/{method}">
+                <param name="method" style="template" type="xsd:string" required="true"/>
+                <method name="GET" id="getOrdersByPayment">
+                    <doc>Returns orders filtered by payment method</doc>
+                    <response status="200">
+                        <representation mediaType="application/json"/>
+                    </response>
+                </method>
+            </resource>
+        </resource>
+    </resources>
+</application>
