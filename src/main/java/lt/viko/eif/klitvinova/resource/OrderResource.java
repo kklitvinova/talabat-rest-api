@@ -38,7 +38,9 @@ public class OrderResource {
      * @return base URL string
      */
     private String getBaseUrl() {
-        return uriInfo.getBaseUri().toString().replaceAll("/$", "");
+        String base = uriInfo.getBaseUri().toString();
+        // remove trailing slash and /api suffix added by Jersey
+        return base.replaceAll("/api/$", "").replaceAll("/$", "");
     }
 
     /**

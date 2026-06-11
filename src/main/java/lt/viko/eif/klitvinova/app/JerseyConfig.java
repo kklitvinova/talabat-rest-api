@@ -18,9 +18,7 @@ public class JerseyConfig extends ResourceConfig {
      * Registers all JAX-RS resources.
      */
     public JerseyConfig() {
-        // register resource class
         register(OrderResource.class);
-        // enable WADL generation
         property("jersey.config.server.wadl.disableWadl", false);
     }
 }
