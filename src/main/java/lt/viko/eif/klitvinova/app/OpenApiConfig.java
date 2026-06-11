@@ -131,6 +131,17 @@ public class OpenApiConfig {
                                 "Payment method e.g. Cash, Wallet, Credit Card"))
                         .responses(okResponse("Filtered orders by payment method"))));
 
+        // POST /api/auth/login
+        paths.addPathItem("/api/auth/login", new PathItem()
+                .post(new Operation()
+                        .summary("Manager login")
+                        .description("Authenticates manager and returns JWT token")
+                        .addTagsItem("Authentication")
+                        .responses(new ApiResponses()
+                                .addApiResponse("200", new ApiResponse()
+                                        .description("Login successful, JWT token returned"))
+                                .addApiResponse("401", new ApiResponse()
+                                        .description("Invalid credentials")))));
         return paths;
     }
 
