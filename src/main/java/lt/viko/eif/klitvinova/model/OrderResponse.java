@@ -1,6 +1,7 @@
 package lt.viko.eif.klitvinova.model;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -20,7 +21,7 @@ public class OrderResponse {
     private Integer deliveryDurationMinutes;
     private Float deliveryDistanceKm;
     private String statusCode;
-    private java.util.List<Product> products;
+    private List<Product> products;
     private Map<String, Map<String, String>> _links;
 
     /**
@@ -59,6 +60,6 @@ public class OrderResponse {
     public Integer getDeliveryDurationMinutes() { return deliveryDurationMinutes; }
     public Float getDeliveryDistanceKm() { return deliveryDistanceKm; }
     public String getStatusCode() { return statusCode; }
-    public java.util.List<Product> getProducts() { return products; }
+    public List<Product> getProducts() { return products; }
     public Map<String, Map<String, String>> get_links() { return _links; }
 }

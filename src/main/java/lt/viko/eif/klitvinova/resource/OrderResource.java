@@ -1,5 +1,10 @@
 package lt.viko.eif.klitvinova.resource;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
@@ -22,6 +27,7 @@ import java.util.stream.Collectors;
  * @author Klitvinova
  * @version 1.0
  */
+@Tag(name = "Orders", description = "Talabat food delivery order management API")
 @Path("/orders")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
@@ -38,9 +44,7 @@ public class OrderResource {
      * @return base URL string
      */
     private String getBaseUrl() {
-        String base = uriInfo.getBaseUri().toString();
-        // remove trailing slash and /api suffix added by Jersey
-        return base.replaceAll("/api/$", "").replaceAll("/$", "");
+        return "http://localhost:8080";
     }
 
     /**
@@ -49,6 +53,12 @@ public class OrderResource {
      *
      * @return list of all orders
      */
+    @Operation(summary = "Get all orders",
+            description = "Returns all delivery orders with HATEOAS links")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "List of orders returned"),
+            @ApiResponse(responseCode = "500", description = "Server error")
+    })
     @GET
     public Response getAllOrders() {
         try {
@@ -68,9 +78,16 @@ public class OrderResource {
      * @param id order ID
      * @return order or 404
      */
+    @Operation(summary = "Get order by ID",
+            description = "Returns a single order by its ID")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Order found"),
+            @ApiResponse(responseCode = "404", description = "Order not found")
+    })
     @GET
     @Path("/{id}")
-    public Response getOrderById(@PathParam("id") int id) {
+    public Response getOrderById(
+            @Parameter(description = "Order ID") @PathParam("id") int id) {
         try {
             Order order = service.getOrderById(id);
             if (order == null) {
@@ -85,14 +102,20 @@ public class OrderResource {
 
     /**
      * GET /api/orders/city/{city}
-     * Returns orders filtered by city with HATEOAS links.
+     * Returns orders filtered by city.
      *
      * @param city city name
      * @return list of orders from that city
      */
+    @Operation(summary = "Get orders by city",
+            description = "Returns orders filtered by city name")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Filtered orders returned")
+    })
     @GET
     @Path("/city/{city}")
-    public Response getOrdersByCity(@PathParam("city") String city) {
+    public Response getOrdersByCity(
+            @Parameter(description = "City name") @PathParam("city") String city) {
         try {
             List<OrderResponse> result = service.getByCity(city).stream()
                     .map(o -> new OrderResponse(o, getBaseUrl()))
@@ -105,14 +128,21 @@ public class OrderResource {
 
     /**
      * GET /api/orders/status/{delivered}
-     * Returns orders filtered by delivery status with HATEOAS links.
+     * Returns orders filtered by delivery status.
      *
      * @param delivered true or false
      * @return filtered list of orders
      */
+    @Operation(summary = "Get orders by delivery status",
+            description = "Returns orders filtered by delivered true or false")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Filtered orders returned")
+    })
     @GET
     @Path("/status/{delivered}")
-    public Response getOrdersByStatus(@PathParam("delivered") boolean delivered) {
+    public Response getOrdersByStatus(
+            @Parameter(description = "Delivery status: true or false")
+            @PathParam("delivered") boolean delivered) {
         try {
             List<OrderResponse> result = service.getByStatus(delivered).stream()
                     .map(o -> new OrderResponse(o, getBaseUrl()))
@@ -125,14 +155,21 @@ public class OrderResource {
 
     /**
      * GET /api/orders/payment/{method}
-     * Returns orders filtered by payment method with HATEOAS links.
+     * Returns orders filtered by payment method.
      *
      * @param method payment method
      * @return filtered list of orders
      */
+    @Operation(summary = "Get orders by payment method",
+            description = "Returns orders filtered by payment method")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Filtered orders returned")
+    })
     @GET
     @Path("/payment/{method}")
-    public Response getOrdersByPayment(@PathParam("method") String method) {
+    public Response getOrdersByPayment(
+            @Parameter(description = "Payment method e.g. Cash, Wallet, Credit Card")
+            @PathParam("method") String method) {
         try {
             List<OrderResponse> result = service.getByPayment(method).stream()
                     .map(o -> new OrderResponse(o, getBaseUrl()))
@@ -150,6 +187,11 @@ public class OrderResource {
      * @param order order to create
      * @return created order with 201 status
      */
+    @Operation(summary = "Create new order",
+            description = "Creates a new delivery order")
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "Order created successfully")
+    })
     @POST
     public Response createOrder(Order order) {
         Order created = service.createOrder(order);
@@ -169,9 +211,17 @@ public class OrderResource {
      * @param order updated order data
      * @return updated order or 404
      */
+    @Operation(summary = "Update order",
+            description = "Updates an existing order by ID")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Order updated"),
+            @ApiResponse(responseCode = "404", description = "Order not found")
+    })
     @PUT
     @Path("/{id}")
-    public Response updateOrder(@PathParam("id") int id, Order order) {
+    public Response updateOrder(
+            @Parameter(description = "Order ID") @PathParam("id") int id,
+            Order order) {
         Order updated = service.updateOrder(id, order);
         if (updated == null) {
             return Response.status(Response.Status.NOT_FOUND)
@@ -187,9 +237,16 @@ public class OrderResource {
      * @param id order ID
      * @return 204 or 404
      */
+    @Operation(summary = "Delete order",
+            description = "Deletes an order by ID")
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "Order deleted"),
+            @ApiResponse(responseCode = "404", description = "Order not found")
+    })
     @DELETE
     @Path("/{id}")
-    public Response deleteOrder(@PathParam("id") int id) {
+    public Response deleteOrder(
+            @Parameter(description = "Order ID") @PathParam("id") int id) {
         boolean deleted = service.deleteOrder(id);
         if (!deleted) {
             return Response.status(Response.Status.NOT_FOUND)
