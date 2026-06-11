@@ -18,7 +18,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * @author Klitvinova
  * @version 1.0
  */
-@SpringBootApplication(scanBasePackages = "lt.viko.eif.klitvinova.rs")
+@SpringBootApplication(scanBasePackages = "lt.viko.eif.klitvinova")
 public class RestApplication {
 
     /**
