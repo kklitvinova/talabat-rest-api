@@ -5,3 +5,4 @@ ${project.build.directory}/
 *.iml
 application.wadl
 frontend/node_modules/
+docs/
